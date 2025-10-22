@@ -1,0 +1,70 @@
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres
+    environment:
+      - POSTGRES_USER=${DB_USER:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-password}
+      - POSTGRES_DB=${DB_NAME:-pos_dev}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./back/init-db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  back:
+    build:
+      context: ./back
+      dockerfile: Dockerfile.dev
+    container_name: back
+    ports:
+      - "${BACKEND_PORT:-8080}:${BACKEND_PORT:-8080}"
+      - "${BACKEND_DEBUG_PORT:-40000}:${BACKEND_DEBUG_PORT:-40000}"
+    volumes:
+      - ./back:/app
+      - go-mod-cache:/go/pkg/mod
+    environment:
+      - GO_ENV=development
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-password}
+      - DB_NAME=${DB_NAME:-pos_dev}
+      - SERVER_PORT=${BACKEND_PORT:-8080}
+      - DEBUG_PORT=${BACKEND_DEBUG_PORT:-40000}
+      - JWT_SECRET=${JWT_SECRET:-dev-secret}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "cd /app && go run ./cmd/server"
+    stdin_open: true
+    tty: true
+
+  front:
+    build:
+      context: ./front
+      dockerfile: Dockerfile.dev
+    container_name: front
+    ports:
+      - "${FRONTEND_PORT:-5173}:${FRONTEND_PORT:-5173}"
+      - "${FRONTEND_DEBUG_PORT:-9229}:${FRONTEND_DEBUG_PORT:-9229}"
+    volumes:
+      - ./front:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=http://localhost:${BACKEND_PORT:-8080}/api/v1
+      - VITE_APP_PORT=${FRONTEND_PORT:-5173}
+      - NODE_ENV=development
+    depends_on:
+      - back
+    command: npm run dev -- --host 0.0.0.0 --port ${FRONTEND_PORT:-5173}
+
+volumes:
+  postgres_data:
+  go-mod-cache:

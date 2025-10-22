@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  backend:
+    environment:
+      - LOG_LEVEL=debug
+      - CORS_ALLOWED_ORIGINS=http://localhost:${FRONTEND_PORT:-5173}
+
+  frontend:
+    environment:
+      - VITE_ENABLE_DEBUG=true
+      - VITE_APP_NAME=POS Dev System

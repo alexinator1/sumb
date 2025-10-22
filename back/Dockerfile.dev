@@ -1,0 +1,16 @@
+FROM golang:1.25-alpine
+
+WORKDIR /app
+
+RUN apk add --no-cache git bash curl
+
+# Копируем зависимости сначала для кеширования
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+EXPOSE ${SERVER_PORT:-8080} ${DEBUG_PORT:-40000}
+
+# Простой запуск сервера
+CMD ["go", "run", "./cmd/server"]
