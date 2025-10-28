@@ -1,12 +1,11 @@
 # Environment files
 back/.env
 front/.env
-
 .env
 # Docker
 **/tmp/
 **/node_modules/
 
-.DS_Store
+.vscode
 
-.vscode/
+.DS_Store

@@ -1,0 +1,19 @@
+openapi: 3.0.3
+info:
+  title: SUMB System API
+  version: 1.0.0
+  description: API для системы управления малым бизнессом
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Development server
+
+# Импорт ВСЕХ путей из каждой сущности осуществляется через отдельные команды в makefile
+
+components:
+  schemas:
+    $ref: './components/common.yaml#/components/schemas'
+  parameters:
+    $ref: './components/parameters.yaml#/components/parameters'
+  responses:
+    $ref: './components/common.yaml#/components/responses'

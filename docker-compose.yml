@@ -6,7 +6,7 @@ services:
     environment:
       - POSTGRES_USER=${DB_USER:-postgres}
       - POSTGRES_PASSWORD=${DB_PASSWORD:-password}
-      - POSTGRES_DB=${DB_NAME:-pos_dev}
+      - POSTGRES_DB=${DB_NAME:-sumb}
     ports:
       - "${DB_PORT:-5432}:5432"
     volumes:
@@ -42,9 +42,21 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     command: sh -c "cd /app && go run ./cmd/server"
     stdin_open: true
     tty: true
+
+  migrate:
+    build:
+      context: ./docker/migrate
+    volumes:
+      - ./back/migrations:/migrations
+    command: ["-path", "/migrations", "-database",  "postgres://${DB_USER:-postgres}:${DB_PASSWORD:-password}@postgres:5432/${DB_NAME:-pos_dev}?sslmode=disable", "up"]
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   front:
     build:

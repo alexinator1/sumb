@@ -1,0 +1,30 @@
+components:
+  parameters:
+    IdPathParam:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: ID ресурса
+
+    PageQueryParam:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 1
+        minimum: 1
+      description: Номер страницы
+
+    LimitQueryParam:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 100
+      description: Количество элементов на странице
