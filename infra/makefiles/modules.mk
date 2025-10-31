@@ -6,10 +6,11 @@
 MODULES := employee sales
 
 # Переменные для генерации модулей
+# MODULES_OUTPUT := back/internal/api/v1/generated
 MODULES_OUTPUT := back/internal/api/v1/generated
 MODULES_SPEC_DIR := specs/api/v1/modules
 MODULES_GENERATED_FOLDER := 
-MODULE_GEN_PATH = $(MODULES_OUTPUT)/$(MODULE)generated
+MODULE_GEN_PATH = back/internal/domain/$(MODULE)/api/v1/generated
 
 # Создание полной спецификации для модуля
 # Использование: make create-module-spec MODULE=employee
@@ -55,7 +56,7 @@ generate-module:
 		-o /local/$(MODULE_GEN_PATH) \
 		--additional-properties=packageName=$(MODULE)generated,enumClassPrefix=true,withGoCodegenComment=true \
 		--skip-validate-spec
-	@echo "✅ $(MODULE) module code generated in $(MODULES_OUTPUT)/$(MODULE)"
+	@echo "✅ $(MODULE) module code generated in $(MODULE_GEN_PATH)"
 	@echo "📁 Moving Go files from go/ subdirectory..."
 	@if [ -d "$(MODULE_GEN_PATH)/go" ]; then \
 		mv $(MODULE_GEN_PATH)/go/*.go $(MODULE_GEN_PATH)/; \

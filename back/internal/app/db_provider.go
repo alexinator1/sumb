@@ -12,7 +12,7 @@ type DBProvider struct {
 	db *gorm.DB
 }
 
-func NewDBProvider(cfg *AppConfig) (*DBProvider, error) {
+func newDBProvider(cfg *AppConfig) (*DBProvider, error) {
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
 		cfg.DBHost,
 		cfg.DBUser,

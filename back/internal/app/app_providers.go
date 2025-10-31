@@ -3,12 +3,12 @@ package app
 import (
 	"fmt"
 
-	"github.com/alexinator1/sumb/back/internal/employee"
+	"github.com/alexinator1/sumb/back/internal/domain/employee/provider"
 )
 
 type AppProviders struct {
-	cfg              *AppConfig
-	employeeProvider *employee.EmployeeProvider
+	cfg                 *AppConfig
+	employeeApiProvider *provider.EmployeeApiProvider
 }
 
 func NewAppProviders(cfg *AppConfig) *AppProviders {
@@ -16,16 +16,16 @@ func NewAppProviders(cfg *AppConfig) *AppProviders {
 }
 
 func (ap *AppProviders) Init() error {
-	dbProvider, err := NewDBProvider(ap.cfg)
+	dbProvider, err := newDBProvider(ap.cfg)
 	if err != nil {
 		return fmt.Errorf("failed to initialize db provider: %w", err)
 	}
 
-	ap.employeeProvider = employee.NewEmployeeProvider(dbProvider.DB())
+	ap.employeeApiProvider = provider.NewEmployeeApiProvider(dbProvider.DB())
 
 	return nil
 }
 
-func (ap *AppProviders) EmployeeProvider() *employee.EmployeeProvider {
-	return ap.employeeProvider
+func (ap *AppProviders) EmployeeApiProvider() *provider.EmployeeApiProvider {
+	return ap.employeeApiProvider
 }

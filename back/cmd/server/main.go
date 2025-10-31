@@ -25,9 +25,9 @@ func main() {
 	defer cancel()
 
 	// Инициализируем все модули
-	if err := application.Init(ctx); err != nil {
-		log.Fatalf("Failed to initialize application: %v", err)
-	}
+	// if err := application.Init(ctx); err != nil {
+	// 	log.Fatalf("Failed to initialize application: %v", err)
+	// }
 
 	// Обработка сигналов для graceful shutdown
 	sigChan := make(chan os.Signal, 1)
