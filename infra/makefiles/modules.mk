@@ -3,37 +3,33 @@
 # =============================================================================
 
 # Массив модулей для генерации (добавляйте новые модули сюда)
-MODULES := employee sales
+MODULES := employee sale business
 
 # Переменные для генерации модулей
 # MODULES_OUTPUT := back/internal/api/v1/generated
 MODULES_OUTPUT := back/internal/api/v1/generated
 MODULES_SPEC_DIR := specs/api/v1/modules
-MODULES_GENERATED_FOLDER := 
-MODULE_GEN_PATH = back/internal/domain/$(MODULE)/api/v1/generated
+MODULES_GENERATED_FOLDER := back/internal/domain/$(MODULE)/api/v1
+MODULE_PACKAGE_NAME := $(MODULE)generated
+MODULE_GEN_PATH = $(MODULES_GENERATED_FOLDER)/$(MODULE_PACKAGE_NAME)
+MODULE_DOMAIN_DIR := back/internal/domain/$(MODULE)
 
-# Создание полной спецификации для модуля
-# Использование: make create-module-spec MODULE=employee
-create-module-spec:
+# Универсальная функция для генерации модуля
+# Использование: make generate-module MODULE=employee
+prepare-module-structure:
 	@if [ -z "$(MODULE)" ]; then \
-		echo "❌ Error: MODULE variable is required. Usage: make create-module-spec MODULE=module_name"; \
+		echo "❌ Error: MODULE variable is required. Usage: make prepare-module-structure MODULE=module_name"; \
 		echo "Available modules: $(MODULES)"; \
 		exit 1; \
 	fi
-	@echo "🔧 Creating full specification for $(MODULE) module..."
-	@mkdir -p $(MODULES_SPEC_DIR)/full
-	@echo "openapi: 3.0.3" > $(MODULES_SPEC_DIR)/full/$(MODULE)-full.yaml
-	@echo "info:" >> $(MODULES_SPEC_DIR)/full/$(MODULE)-full.yaml
-	@echo "  title: $(MODULE) API" >> $(MODULES_SPEC_DIR)/full/$(MODULE)-full.yaml
-	@echo "  version: 1.0.0" >> $(MODULES_SPEC_DIR)/full/$(MODULE)-full.yaml
-	@echo "  description: API для модуля $(MODULE)" >> $(MODULES_SPEC_DIR)/full/$(MODULE)-full.yaml
-	@echo "" >> $(MODULES_SPEC_DIR)/full/$(MODULE)-full.yaml
-	@echo "servers:" >> $(MODULES_SPEC_DIR)/full/$(MODULE)-full.yaml
-	@echo "  - url: http://localhost:8080/api/v1" >> $(MODULES_SPEC_DIR)/full/$(MODULE)-full.yaml
-	@echo "    description: Development server" >> $(MODULES_SPEC_DIR)/full/$(MODULE)-full.yaml
-	@echo "" >> $(MODULES_SPEC_DIR)/full/$(MODULE)-full.yaml
-	@cat $(MODULES_SPEC_DIR)/$(MODULE)-api.yaml >> $(MODULES_SPEC_DIR)/full/$(MODULE)-full.yaml
-	@echo "✅ Full specification created: $(MODULES_SPEC_DIR)/full/$(MODULE)-full.yaml"
+	@echo "📁 Preparing domain structure for module '$(MODULE)'..."
+	@mkdir -p $(MODULE_DOMAIN_DIR)/api/v1/adapter
+	@mkdir -p $(MODULE_DOMAIN_DIR)/api/v1/handler
+	@mkdir -p $(MODULE_DOMAIN_DIR)/entity
+	@mkdir -p $(MODULE_DOMAIN_DIR)/provider
+	@mkdir -p $(MODULE_DOMAIN_DIR)/repository
+	@mkdir -p $(MODULE_DOMAIN_DIR)/service
+	@echo "✅ Structure prepared under $(MODULE_DOMAIN_DIR) (existing folders kept)"
 
 # Универсальная функция для генерации модуля
 # Использование: make generate-module MODULE=employee
@@ -43,18 +39,18 @@ generate-module:
 		echo "Available modules: $(MODULES)"; \
 		exit 1; \
 	fi
+	@$(MAKE) prepare-module-structure MODULE=$(MODULE)
 	@echo "🔧 Creating full specification for $(MODULE)..."
-	@$(MAKE) create-module-spec MODULE=$(MODULE)
 	@echo "🔧 Generating $(MODULE) module code..."
 	@echo "🧹 Cleaning previous generated code..."
 	@rm -rf $(MODULE_GEN_PATH)
 	@mkdir -p $(MODULE_GEN_PATH)
 	@docker run --rm -v ${PWD}:/local \
 		$(OPENAPI_GENERATOR) generate \
-		-i /local/$(MODULES_SPEC_DIR)/full/$(MODULE)-full.yaml \
+		-i /local/$(MODULES_SPEC_DIR)/$(MODULE)-api.yaml \
 		-g go-server \
 		-o /local/$(MODULE_GEN_PATH) \
-		--additional-properties=packageName=$(MODULE)generated,enumClassPrefix=true,withGoCodegenComment=true \
+		--additional-properties=packageName=$(MODULE_PACKAGE_NAME),enumClassPrefix=true,withGoCodegenComment=true \
 		--skip-validate-spec
 	@echo "✅ $(MODULE) module code generated in $(MODULE_GEN_PATH)"
 	@echo "📁 Moving Go files from go/ subdirectory..."

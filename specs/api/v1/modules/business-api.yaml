@@ -1,0 +1,221 @@
+openapi: 3.0.3
+info:
+  title: business API
+  version: 1.0.0
+  description: API для модуля business
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Development server
+
+components:
+  schemas:
+    Business:
+      type: object
+      required: [id, name, createdAt, updatedAt, ownerFirstName, ownerLastName, ownerEmail, ownerPhone]
+      properties:
+        id:
+          type: integer
+          format: uint64
+          example: 1
+        name:
+          type: string
+          maxLength: 200
+          example: "ООО Ромашка"
+        description:
+          type: string
+          nullable: true
+        ownerFirstName:
+          type: string
+          maxLength: 100
+          example: "Иван"
+        ownerLastName:
+          type: string
+          maxLength: 100
+          example: "Петров"
+        ownerMiddleName:
+          type: string
+          maxLength: 100
+          nullable: true
+          example: "Иванович"
+        ownerEmail:
+          type: string
+          format: email
+          example: "owner@example.com"
+        ownerPhone:
+          type: string
+          example: "+79991234567"
+        logoId:
+          type: string
+          nullable: true
+          example: "logo_123"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        isWorking:
+          type: boolean 
+          default: false
+          description: Флаг активности
+          example: true
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+        ownerId:
+          type: integer
+          format: uint64
+          nullable: true
+
+    CreateBusinessRequest:
+      type: object
+      required: [name, ownerFirstName, ownerLastName, ownerEmail, ownerPhone]
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          nullable: true
+        ownerFirstName:
+          type: string
+          maxLength: 100
+        ownerLastName:
+          type: string
+          maxLength: 100
+        ownerMiddleName:
+          type: string
+          maxLength: 100
+          nullable: true
+        ownerEmail:
+          type: string
+          format: email
+        ownerPhone:
+          type: string
+        logoId:
+          type: string
+          nullable: true
+        isWorking:
+          type: boolean
+          description: Флаг активности
+        ownerId:
+          type: integer
+          format: uint64
+          nullable: true
+
+    UpdateBusinessRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        ownerFirstName:
+          type: string
+          maxLength: 100
+          nullable: true
+        ownerLastName:
+          type: string
+          maxLength: 100
+          nullable: true
+        ownerMiddleName:
+          type: string
+          maxLength: 100
+          nullable: true
+        ownerEmail:
+          type: string
+          format: email
+          nullable: true
+        ownerPhone:
+          type: string
+          nullable: true
+        logoId:
+          type: string
+          nullable: true
+        isWorking:
+          type: boolean
+          description: Флаг активности
+          nullable: true
+        ownerId:
+          type: integer
+          format: uint64
+          nullable: true
+
+  responses:
+    BusinessNotFound:
+      description: Бизнес не найден
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Business Not Found"
+              message:
+                type: string
+                example: "Business with ID 123 not found"
+
+paths:
+  /businesses:
+    post:
+      summary: Создать бизнес
+      description: Создать новый бизнес
+      tags: [Businesses]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBusinessRequest'
+      responses:
+        201:
+          description: Бизнес создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Business'
+        400:
+          $ref: '../components/common.yaml#/components/responses/ValidationError'
+
+  /businesses/{id}:
+    parameters:
+      - $ref: '../components/parameters.yaml#/components/parameters/IdPathParam'
+    get:
+      summary: Получить бизнес по ID
+      tags: [Businesses]
+      responses:
+        200:
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Business'
+        404:
+          $ref: '#/components/responses/BusinessNotFound'
+    put:
+      summary: Обновить бизнес
+      tags: [Businesses]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBusinessRequest'
+      responses:
+        200:
+          description: Бизнес обновлён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Business'
+        404:
+          $ref: '#/components/responses/BusinessNotFound'
+

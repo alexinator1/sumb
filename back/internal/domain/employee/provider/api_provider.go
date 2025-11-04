@@ -27,7 +27,7 @@ func (p *EmployeeApiProvider) AddApiV1Routes(router *gin.Engine) *gin.RouterGrou
 	return employeesRoutes
 }
 
-func (p *EmployeeApiProvider) buildHandler() *handler.Handler {
+func (p *EmployeeApiProvider) buildHandler() *handler.ApiHandler {
 	repo := repo.NewRepo(p.db)
 	service := service.NewService(repo)
 

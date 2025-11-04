@@ -28,3 +28,10 @@ func (r *EmployeeRepo) GetByID(ctx context.Context, id uint64) (*entity.Employee
 	}
 	return &e, nil
 }
+
+func (r *EmployeeRepo) Create(ctx context.Context, e *entity.Employee) error {
+	if err := r.db.WithContext(ctx).Create(e).Error; err != nil {
+		return err
+	}
+	return nil
+}

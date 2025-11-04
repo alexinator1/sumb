@@ -2,7 +2,7 @@ FROM golang:1.25-alpine
 
 WORKDIR /app
 
-RUN apk add --no-cache git bash curl
+RUN apk add --no-cache git bash curl gcc musl-dev
 
 # Копируем зависимости сначала для кеширования
 COPY go.mod go.sum ./

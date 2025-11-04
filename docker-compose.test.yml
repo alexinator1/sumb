@@ -1,0 +1,53 @@
+services:
+  postgres-test:
+    image: postgres:15-alpine
+    container_name: postgres-test
+    environment:
+      - POSTGRES_USER=${DB_USER:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-test_password}
+      - POSTGRES_DB=${DB_NAME:-sumb_test}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - test-network
+
+  back-test:
+    build:
+      context: ./back
+      dockerfile: Dockerfile.dev
+    container_name: back-test
+    volumes:
+      - ./back:/app
+      - go-mod-cache-test:/go/pkg/mod
+    environment:
+      - GO_ENV=test
+      - DB_HOST=postgres-test
+      - DB_PORT=5432
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-test_password}
+      - DB_NAME=${DB_NAME:-sumb_test}
+      - SERVER_PORT=${SERVER_PORT:-8081}
+      - DEBUG_PORT=${DEBUG_PORT:-40001}
+      - JWT_SECRET=${JWT_SECRET:-test-secret-key}
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+    networks:
+      - test-network
+    # Override command will be set in Makefile
+
+volumes:
+  postgres_test_data:
+  go-mod-cache-test:
+
+networks:
+  test-network:
+    driver: bridge
+

@@ -1,64 +1,214 @@
+openapi: 3.0.3
+info:
+  title: employee API
+  version: 1.0.0
+  description: API для модуля employee
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Development server
+
 # Схемы (модели) для сотрудников
 components:
   schemas:
+  
     Employee:
       type: object
+      required: [id, firstName, lastName, email, phone]
       properties:
         id:
           type: integer
           format: int64
           example: 1
-        name:
+        firstName:
           type: string
-          example: "Иван Петров"
-        role:
+          maxLength: 100
+          example: "Иван"
+        lastName:
           type: string
-          enum: [cashier, manager, admin]
-          example: "cashier"
+          maxLength: 100
+          example: "Петров"
+        middleName:
+          type: string
+          maxLength: 100
+          nullable: true
+          example: "Иванович"
         phone:
           type: string
           example: "+79161234567"
+        position:
+          type: string
+          nullable: true
+          example: "Кассир"
+        role:
+          type: string
+          enum: [regular, admin, owner]
+          example: "regular"
+        birthDate:
+          type: string
+          format: date
+          nullable: true
+          example: "1990-05-20"
+        hiredAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2024-01-15T10:30:00Z"
+        firedAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2025-06-01T18:00:00Z"
+        addedAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        email:
+          type: string
+          format: email
+          example: "ivan.petrov@example.com"
+        status:
+          type: string
+          enum: [onboarding, active, vacation, ill]
+          example: "onboarding"
         createdAt:
           type: string
           format: date-time
           example: "2024-01-15T10:30:00Z"
-      required: [id, name, role, phone]
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        createdBy:
+          type: integer
+          format: int64
+          nullable: true
+          example: 1
+        avatarUrl:
+          type: string
+          format: uri
+          nullable: true
+          example: "https://cdn.example.com/avatars/1.png"
 
     CreateEmployeeRequest:
       type: object
+      required:
+        - firstName
+        - lastName
+        - email
+        - phone
       properties:
-        name:
+        firstName:
           type: string
-          minLength: 2
+          minLength: 1
           maxLength: 100
-          example: "Иван Петров"
-        role:
+          example: "Иван"
+        lastName:
           type: string
-          enum: [cashier, manager, admin]
-          example: "cashier"
+          minLength: 1
+          maxLength: 100
+          example: "Петров"
+        middleName:
+          type: string
+          maxLength: 100
+          nullable: true
+          example: "Иванович"
         phone:
           type: string
           pattern: '^\+?[1-9]\d{1,14}$'
           example: "+79161234567"
-      required: [name, role, phone]
+        position:
+          type: string
+          nullable: true
+          example: "Кассир"
+        role:
+          type: string
+          enum: [regular, admin, owner]
+          example: "regular"
+        birthDate:
+          type: string
+          format: date
+          nullable: true
+          example: "1990-05-20"
+        hiredAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2024-01-15T10:30:00Z"
+        email:
+          type: string
+          format: email
+          example: "ivan.petrov@example.com"
+        status:
+          type: string
+          enum: [onboarding, active, vacation, ill]
+          nullable: true
+          example: "onboarding"
+        avatarUrl:
+          type: string
+          format: uri
+          nullable: true
+          example: "https://cdn.example.com/avatars/1.png"
 
     UpdateEmployeeRequest:
       type: object
       properties:
-        name:
+        firstName:
           type: string
-          minLength: 2
           maxLength: 100
-          example: "Иван Петров"
-        role:
+          example: "Иван"
+        lastName:
           type: string
-          enum: [cashier, manager, admin]
-          example: "manager"
+          maxLength: 100
+          example: "Петров"
+        middleName:
+          type: string
+          maxLength: 100
+          nullable: true
+          example: "Иванович"
         phone:
           type: string
+          nullable: true
           pattern: '^\+?[1-9]\d{1,14}$'
           example: "+79161234567"
-      required: [name, role, phone]
+        position:
+          type: string
+          nullable: true
+          example: "Кассир"
+        role:
+          type: string
+          enum: [regular, admin, owner]
+          example: "admin"
+        birthDate:
+          type: string
+          format: date
+          nullable: true
+          example: "1990-05-20"
+        hiredAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2024-01-15T10:30:00Z"
+        firedAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2025-06-01T18:00:00Z"
+        email:
+          type: string
+          format: email
+          nullable: true
+          example: "ivan.petrov@example.com"
+        status:
+          type: string
+          enum: [onboarding, active, vacation, ill]
+          nullable: true
+          example: "active"
+        avatarUrl:
+          type: string
+          format: uri
+          nullable: true
+          example: "https://cdn.example.com/avatars/1.png"
 
     EmployeeListResponse:
       type: object

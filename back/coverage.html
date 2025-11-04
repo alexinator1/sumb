@@ -1,0 +1,279 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>entity: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/alexinator1/sumb/back/internal/domain/employee/entity/employee.go (0.0%)</option>
+				
+				<option value="file1">github.com/alexinator1/sumb/back/internal/domain/employee/repository/repo.go (0.0%)</option>
+				
+				<option value="file2">github.com/alexinator1/sumb/back/internal/domain/employee/service/service.go (0.0%)</option>
+				
+				<option value="file3">github.com/alexinator1/sumb/back/internal/tools/convertor/from_ptr.go (0.0%)</option>
+				
+				<option value="file4">github.com/alexinator1/sumb/back/internal/tools/convertor/time.go (0.0%)</option>
+				
+				<option value="file5">github.com/alexinator1/sumb/back/internal/tools/convertor/to_ptr.go (0.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">no coverage</span>
+				<span class="cov1">low coverage</span>
+				<span class="cov2">*</span>
+				<span class="cov3">*</span>
+				<span class="cov4">*</span>
+				<span class="cov5">*</span>
+				<span class="cov6">*</span>
+				<span class="cov7">*</span>
+				<span class="cov8">*</span>
+				<span class="cov9">*</span>
+				<span class="cov10">high coverage</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package employee
+
+import "time"
+
+type Employee struct {
+        ID           uint64     `gorm:"primaryKey;autoIncrement;column:id"`
+        FirstName    string     `gorm:"size:100;not null;column:first_name"`
+        LastName     string     `gorm:"size:100;not null;column:last_name"`
+        MiddleName   *string    `gorm:"size:100;column:middle_name"`
+        PasswordHash string     `gorm:"size:255;not null;column:password_hash"`
+        PasswordSalt *string    `gorm:"size:255;column:password_salt"`
+        Phone        string    `gorm:"size:30;column:phone"`
+        Position     *string    `gorm:"size:100;column:position"`
+        Role         string     `gorm:"type:employee_role;not null;default:regular;column:role"`
+        BirthDate    *time.Time `gorm:"type:date;column:birth_date"`
+        HiredAt      *time.Time `gorm:"column:hired_at"`
+        FiredAt      *time.Time `gorm:"column:fired_at"`
+        AddedAt      time.Time  `gorm:"column:added_at;not null;default:now()"`
+        Email        string     `gorm:"size:255;column:email"`
+        Status       string     `gorm:"type:employee_status;not null;default:onboarding;column:status"`
+        CreatedAt    time.Time  `gorm:"autoCreateTime;column:created_at"`
+        UpdatedAt    time.Time  `gorm:"autoUpdateTime;column:updated_at"`
+        CreatedBy    uint64     `gorm:"column:created_by"`
+        AvatarURL    string     `gorm:"size:255;column:avatar_url"`
+
+        // relation to creator (optional)
+        Creator *Employee `gorm:"foreignKey:CreatedBy;references:ID;constraint:OnDelete:SET NULL"`
+}
+
+func (e *Employee) FullName() string <span class="cov0" title="0">{
+        if e == nil </span><span class="cov0" title="0">{
+                return ""
+        }</span>
+        <span class="cov0" title="0">if e.MiddleName != nil &amp;&amp; *e.MiddleName != "" </span><span class="cov0" title="0">{
+                return e.FirstName + " " + *e.MiddleName + " " + e.LastName
+        }</span>
+        <span class="cov0" title="0">return e.FirstName + " " + e.LastName</span>
+}
+
+// IsActive reports whether the employee is not fired (FiredAt == nil).
+func (e *Employee) IsActive() bool <span class="cov0" title="0">{
+        if e == nil </span><span class="cov0" title="0">{
+                return false
+        }</span>
+        <span class="cov0" title="0">return e.FiredAt == nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package employee
+
+import (
+        "context"
+        "errors"
+
+        entity "github.com/alexinator1/sumb/back/internal/domain/employee/entity"
+        "gorm.io/gorm"
+)
+
+// EmployeeRepo репозиторий для пользователей
+type EmployeeRepo struct {
+        db *gorm.DB
+}
+
+func NewRepo(db *gorm.DB) *EmployeeRepo <span class="cov0" title="0">{
+        return &amp;EmployeeRepo{db: db}
+}</span>
+
+func (r *EmployeeRepo) GetByID(ctx context.Context, id uint64) (*entity.Employee, error) <span class="cov0" title="0">{
+        var e entity.Employee
+        if err := r.db.WithContext(ctx).First(&amp;e, "id = ?", id).Error; err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, gorm.ErrRecordNotFound
+                }</span>
+
+                <span class="cov0" title="0">return nil, err</span>
+        }
+        <span class="cov0" title="0">return &amp;e, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package employee
+
+import (
+        "context"
+        "fmt"
+        entity "github.com/alexinator1/sumb/back/internal/domain/employee/entity"
+        repo "github.com/alexinator1/sumb/back/internal/domain/employee/repository"
+)
+
+// EmployeeService provides business logic operations on employees
+type EmployeeService struct {
+        repo *repo.EmployeeRepo
+}
+
+// NewService creates a new employee service
+func NewService(repo *repo.EmployeeRepo) *EmployeeService <span class="cov0" title="0">{
+        return &amp;EmployeeService{
+                repo: repo,
+        }
+}</span>
+
+// GetEmployeeByID retrieves an employee by their ID
+func (s *EmployeeService) GetEmployeeByID(ctx context.Context, id uint64) (*entity.Employee, error) <span class="cov0" title="0">{
+        if id == 0 </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("invalid employee ID: cannot be zero")
+        }</span>
+
+        <span class="cov0" title="0">employee, err := s.repo.GetByID(ctx, id)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to get employee by ID: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return employee, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package convertor
+
+func PtrToInt64(v *uint64) int64 <span class="cov0" title="0">{
+        if v == nil </span><span class="cov0" title="0">{
+                return 0
+        }</span>
+        <span class="cov0" title="0">return int64(*v)</span>
+}</pre>
+		
+		<pre class="file" id="file4" style="display: none">package convertor
+
+import "time"
+
+func PtrStringToTime(v *string) (*time.Time, error) <span class="cov0" title="0">{
+        if v == nil </span><span class="cov0" title="0">{
+                return nil, nil
+        }</span>
+        <span class="cov0" title="0">if *v != "" </span><span class="cov0" title="0">{
+                d, err := time.Parse("2006-01-02", *v)
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+                <span class="cov0" title="0">return &amp;d, nil</span>
+        }
+        <span class="cov0" title="0">return nil, nil</span>
+}</pre>
+		
+		<pre class="file" id="file5" style="display: none">package convertor
+
+func StrPtrIfNotEmpty(s string) *string <span class="cov0" title="0">{
+        if s == "" </span><span class="cov0" title="0">{
+                return nil
+        }</span>
+        <span class="cov0" title="0">return &amp;s</span>
+}
+func Int64PtrIfNotZero(v uint64) *int64 <span class="cov0" title="0">{
+        if v == 0 </span><span class="cov0" title="0">{
+                return nil
+        }</span>
+        <span class="cov0" title="0">x := int64(v)
+        return &amp;x</span>
+}        </pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

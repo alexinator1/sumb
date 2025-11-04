@@ -6,6 +6,7 @@ components:
       required: true
       schema:
         type: integer
+        format: int64
       description: ID ресурса
 
     PageQueryParam:
@@ -14,6 +15,7 @@ components:
       required: false
       schema:
         type: integer
+        format: int32
         default: 1
         minimum: 1
       description: Номер страницы
@@ -24,6 +26,7 @@ components:
       required: false
       schema:
         type: integer
+        format: int32
         default: 20
         minimum: 1
         maximum: 100

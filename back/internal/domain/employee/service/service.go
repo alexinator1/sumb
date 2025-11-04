@@ -32,3 +32,19 @@ func (s *EmployeeService) GetEmployeeByID(ctx context.Context, id uint64) (*enti
 
 	return employee, nil
 }
+
+func (s *EmployeeService) Create(ctx context.Context, e *entity.Employee) error {
+	if e == nil {
+		return fmt.Errorf("employee cannot be nil")
+	}
+	if e.FirstName == "" {
+		return fmt.Errorf("employee first name is required")
+	}
+	if e.LastName == "" {
+		return fmt.Errorf("employee last name is required")
+	}
+	if err := s.repo.Create(ctx, e); err != nil {
+		return fmt.Errorf("failed to create employee: %w", err)
+	}
+	return nil
+}
