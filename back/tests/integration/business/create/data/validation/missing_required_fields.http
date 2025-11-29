@@ -1,0 +1,9 @@
+POST /business HTTP/1.1
+Host: localhost
+Content-Type: application/json
+Content-Length: 75
+
+{
+    "description": "Описание тестовой компании"
+}
+

@@ -17,6 +17,7 @@ components:
         id:
           type: integer
           format: uint64
+          x-go-type: uint64
           example: 1
         name:
           type: string
@@ -69,21 +70,26 @@ components:
         ownerId:
           type: integer
           format: uint64
+          x-go-type: uint64
           nullable: true
 
     CreateBusinessRequest:
       type: object
-      required: [name, ownerFirstName, ownerLastName, ownerEmail, ownerPhone]
+      required: [name, ownerFirstName, ownerLastName, ownerEmail, ownerPhone, password, passwordConfirmation]
       properties:
         name:
           type: string
+          minLength: 1
           maxLength: 200
+          example: "ООО Ромашка"
         description:
           type: string
           nullable: true
+          example: "ООО Ромашка"
         ownerFirstName:
           type: string
           maxLength: 100
+          example: "Иван"
         ownerLastName:
           type: string
           maxLength: 100
@@ -91,21 +97,29 @@ components:
           type: string
           maxLength: 100
           nullable: true
+          example: "Иванович"
         ownerEmail:
           type: string
           format: email
+          example: "owner@example.com"
         ownerPhone:
           type: string
-        logoId:
+          pattern: '^\+?[1-9]\d{1,14}$'
+          example: "+79161234567" 
+        password:
           type: string
-          nullable: true
-        isWorking:
-          type: boolean
-          description: Флаг активности
-        ownerId:
-          type: integer
-          format: uint64
-          nullable: true
+          minLength: 8
+          maxLength: 100
+          pattern: '^[a-zA-Z0-9]+$'
+          description: Пароль для авторизации
+          example: "password123"
+        passwordConfirmation:
+          type: string
+          minLength: 8
+          maxLength: 100
+          pattern: '^[a-zA-Z0-9]+$'
+          description: Подтверждение пароля
+          example: "password123"
 
     UpdateBusinessRequest:
       type: object
@@ -148,6 +162,25 @@ components:
           format: uint64
           nullable: true
 
+    ValidationErrorDetail:
+      type: object  
+      required: [field, message]
+      properties:
+        field:
+          type: string
+        message:
+          type: string
+  
+    CreateBusinessResponse:
+      type: object  
+      required: [data, message] 
+      properties:
+        data:
+          $ref: '#/components/schemas/Business'
+        message:
+          type: string
+          example: "Business created successfully"  
+
   responses:
     BusinessNotFound:
       description: Бизнес не найден
@@ -162,9 +195,27 @@ components:
               message:
                 type: string
                 example: "Business with ID 123 not found"
+    ValidationErrorResponse:
+      description: Ошибка валидации
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [error, message, details]
+            properties:
+              error:
+                type: string
+                example: "Validation Error"
+              message:
+                type: string
+                example: "Request validation failed"
+              details:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ValidationErrorDetail'
 
 paths:
-  /businesses:
+  /business:
     post:
       summary: Создать бизнес
       description: Создать новый бизнес
@@ -181,13 +232,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Business'
+                $ref: '#/components/schemas/CreateBusinessResponse'
         400:
-          $ref: '../components/common.yaml#/components/responses/ValidationError'
+          $ref: '#/components/responses/ValidationErrorResponse'
 
-  /businesses/{id}:
+  /business/{id}:
     parameters:
-      - $ref: '../components/parameters.yaml#/components/parameters/IdPathParam'
+      - name: id
+        in: path
+        required: true  
+        schema:
+          type: integer
+          format: uint64
+        description: ID ресурса
     get:
       summary: Получить бизнес по ID
       tags: [Businesses]
@@ -218,4 +275,19 @@ paths:
                 $ref: '#/components/schemas/Business'
         404:
           $ref: '#/components/responses/BusinessNotFound'
-
+    delete:
+      summary: Удалить бизнес
+      tags: [Businesses]
+      responses:
+        200:
+          description: Бизнес удален
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Business deleted successfully"
+        404:
+          $ref: '#/components/responses/BusinessNotFound' 

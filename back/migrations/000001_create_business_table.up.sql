@@ -1,6 +1,3 @@
--- Migration: create business table
--- Creates table: business
-
 CREATE TABLE IF NOT EXISTS business (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(200) NOT NULL,
@@ -13,7 +10,7 @@ CREATE TABLE IF NOT EXISTS business (
     logo_id VARCHAR(255),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    is_working SMALLINT NOT NULL DEFAULT 1,
+    is_working BOOLEAN NOT NULL DEFAULT true,
     deleted_at TIMESTAMPTZ,
     owner_id BIGINT
 );

@@ -8,28 +8,34 @@ import (
 	"gorm.io/gorm"
 )
 
-type EmployeeApiProvider struct {
+type EmployeeProvider struct {
 	db *gorm.DB
+	repo *repo.EmployeeRepo
 }
 
-func NewEmployeeApiProvider(db *gorm.DB) *EmployeeApiProvider {
-	return &EmployeeApiProvider{db: db}
+func NewEmployeeProvider(db *gorm.DB) *EmployeeProvider {
+	repo := repo.NewRepo(db)
+	return &EmployeeProvider{db: db, repo: repo}
 }
 
-func (p *EmployeeApiProvider) AddApiV1Routes(router *gin.Engine) *gin.RouterGroup {
-	handler := p.buildHandler()
+func (p *EmployeeProvider) AddApiV1Routes(router *gin.Engine) *gin.RouterGroup {
+	h := p.buildHandler()
 
 	employeesRoutes := router.Group("/employees")
 	{
-		employeesRoutes.GET("/:id", handler.GetEmployee)
+		employeesRoutes.GET("/:id", h.GetEmployee)
+		employeesRoutes.POST("", h.CreateEmployee)
 	}
 
 	return employeesRoutes
 }
 
-func (p *EmployeeApiProvider) buildHandler() *handler.ApiHandler {
-	repo := repo.NewRepo(p.db)
-	service := service.NewService(repo)
+func (p *EmployeeProvider) EmployeeRepo() *repo.EmployeeRepo {
+	return p.repo
+}
+
+func (p *EmployeeProvider) buildHandler() *handler.ApiHandler {
+	service := service.NewService(p.repo)
 
 	return handler.NewHandler(service)
 }

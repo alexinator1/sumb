@@ -9,3 +9,6 @@ front/.env
 .vscode
 
 .DS_Store
+
+debug
+back/debug

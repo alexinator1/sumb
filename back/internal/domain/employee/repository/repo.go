@@ -30,7 +30,11 @@ func (r *EmployeeRepo) GetByID(ctx context.Context, id uint64) (*entity.Employee
 }
 
 func (r *EmployeeRepo) Create(ctx context.Context, e *entity.Employee) error {
-	if err := r.db.WithContext(ctx).Create(e).Error; err != nil {
+	return r.CreateWithDB(ctx, r.db, e)
+}
+
+func (r *EmployeeRepo) CreateWithDB(ctx context.Context, db *gorm.DB, e *entity.Employee) error {
+	if err := db.WithContext(ctx).Create(e).Error; err != nil {
 		return err
 	}
 	return nil

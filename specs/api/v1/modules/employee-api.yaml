@@ -18,7 +18,7 @@ components:
       properties:
         id:
           type: integer
-          format: int64
+          format: uint64
           example: 1
         firstName:
           type: string
@@ -81,7 +81,7 @@ components:
           example: "2024-01-15T10:30:00Z"
         createdBy:
           type: integer
-          format: int64
+          format: uint64
           nullable: true
           example: 1
         avatarUrl:
@@ -210,6 +210,26 @@ components:
           nullable: true
           example: "https://cdn.example.com/avatars/1.png"
 
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        pages:
+          type: integer
+    
+    ErrorDetail:
+      type: object
+      properties:
+        field:
+          type: string
+        message:
+          type: string
+    
     EmployeeListResponse:
       type: object
       properties:
@@ -218,7 +238,7 @@ components:
           items:
             $ref: '#/components/schemas/Employee'
         pagination:
-          $ref: '../components/common.yaml#/components/schemas/Pagination'
+          $ref: '#/components/schemas/Pagination'
 
   responses:
     EmployeeNotFound:
@@ -234,6 +254,34 @@ components:
               message:
                 type: string
                 example: "Employee with ID 123 not found"
+    ValidationError:
+      description: Ошибка валидации
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Validation Error"
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ErrorDetail'
+    InternalError:
+      description: Внутренняя ошибка сервера
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Internal Server Error"
+              message:
+                type: string
 
 # ВСЕ пути для сотрудников в одном месте
 paths:
@@ -243,8 +291,25 @@ paths:
       description: Получить список сотрудников с пагинацией
       tags: [Employees]
       parameters:
-        - $ref: '../components/parameters.yaml#/components/parameters/PageQueryParam'
-        - $ref: '../components/parameters.yaml#/components/parameters/LimitQueryParam'
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 1
+            minimum: 1
+          description: Номер страницы
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 20
+            minimum: 1
+            maximum: 100
+          description: Количество сотрудников на странице
       responses:
         200:
           description: Успешный ответ
@@ -271,11 +336,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/Employee'
         400:
-          $ref: '../components/common.yaml#/components/responses/ValidationError'
+          $ref: '#/components/responses/ValidationError'
 
   /employees/{id}:
     parameters:
-      - $ref: '../components/parameters.yaml#/components/parameters/IdPathParam'
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: uint64
+        description: ID ресурса
     get:
       summary: Получить сотрудника по ID
       tags: [Employees]

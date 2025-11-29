@@ -3,7 +3,7 @@ package adapter
 import (
 	generated "github.com/alexinator1/sumb/back/internal/domain/business/api/v1/businessgenerated"
 	domain "github.com/alexinator1/sumb/back/internal/domain/business/entity"
-	convertor "github.com/alexinator1/sumb/back/internal/tools/convertor"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 func DomainToGeneratedBusiness(b *domain.Business) *generated.Business {
@@ -11,26 +11,19 @@ func DomainToGeneratedBusiness(b *domain.Business) *generated.Business {
 		return nil
 	}
 	return &generated.Business{
-		Id:              int64(b.ID),
+		Id:              uint64(b.ID),
 		Name:            b.Name,
 		Description:     b.Description,
 		OwnerFirstName:  b.OwnerFirstName,
 		OwnerLastName:   b.OwnerLastName,
 		OwnerMiddleName: b.OwnerMiddleName,
-		OwnerEmail:      b.OwnerEmail,
+		OwnerEmail:      openapi_types.Email(b.OwnerEmail),
 		OwnerPhone:      b.OwnerPhone,
 		LogoId:          b.LogoID,
 		CreatedAt:       b.CreatedAt,
 		UpdatedAt:       b.UpdatedAt,
-		IsWorking:       b.IsWorking,
+		IsWorking:       &b.IsWorking,
 		DeletedAt:       b.DeletedAt,
 		OwnerId:         b.OwnerID,
 	}
-}
-
-func ptrToUint64OrZero(p *uint64) uint64 {
-	if p == nil {
-		return 0
-	}
-	return *p
 }

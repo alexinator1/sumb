@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 // App является основным объектом приложения
@@ -23,7 +24,10 @@ func NewApp(cfg *AppConfig) (*App, error) {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	providers := NewAppProviders(cfg)
+	providers, err := NewAppProviders(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create app providers: %w", err)
+	}
 	if err := providers.Init(); err != nil {
 		return nil, fmt.Errorf("failed to initialize app providers: %w", err)
 	}
@@ -31,8 +35,9 @@ func NewApp(cfg *AppConfig) (*App, error) {
 	router := buildRouter(providers)
 
 	return &App{
-		Cfg:    cfg,
-		router: router,
+		Cfg:          cfg,
+		appProviders: providers,
+		router:       router,
 	}, nil
 }
 
@@ -57,6 +62,15 @@ func (a *App) Run(ctx context.Context) error {
 	}()
 
 	return nil
+}
+
+// Router возвращает роутер для тестирования
+func (a *App) Router() *gin.Engine {
+	return a.router
+}
+
+func (a *App) DB() *gorm.DB {
+	return a.appProviders.DbProvider.DB()
 }
 
 // Shutdown gracefully останавливает приложение

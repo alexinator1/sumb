@@ -1,4 +1,4 @@
-package business
+package repository
 
 import (
 	"context"
@@ -28,14 +28,22 @@ func (r *BusinessRepo) GetByID(ctx context.Context, id uint64) (*entity.Business
 }
 
 func (r *BusinessRepo) Create(ctx context.Context, b *entity.Business) error {
-	if err := r.db.WithContext(ctx).Create(b).Error; err != nil {
+	return r.CreateWithDB(ctx, r.db, b)
+}
+
+func (r *BusinessRepo) CreateWithDB(ctx context.Context, db *gorm.DB, b *entity.Business) error {
+	if err := db.WithContext(ctx).Create(b).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
 func (r *BusinessRepo) Update(ctx context.Context, b *entity.Business) error {
-	if err := r.db.WithContext(ctx).Save(b).Error; err != nil {
+	return r.UpdateWithDB(ctx, r.db, b)
+}
+
+func (r *BusinessRepo) UpdateWithDB(ctx context.Context, db *gorm.DB, b *entity.Business) error {
+	if err := db.WithContext(ctx).Save(b).Error; err != nil {
 		return err
 	}
 	return nil

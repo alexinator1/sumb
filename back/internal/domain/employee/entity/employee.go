@@ -1,6 +1,8 @@
 package employee
 
-import "time"
+import (
+	"time"
+)
 
 type Employee struct {
 	ID           uint64       `gorm:"primaryKey;autoIncrement;column:id"`
@@ -20,7 +22,7 @@ type Employee struct {
 	Status       string       `gorm:"type:employee_status;not null;default:onboarding;column:status"`
 	CreatedAt    time.Time    `gorm:"autoCreateTime;column:created_at"`
 	UpdatedAt    time.Time    `gorm:"autoUpdateTime;column:updated_at"`
-	CreatedBy    uint64       `gorm:"column:created_by"`
+	CreatedBy    *uint64       `gorm:"column:created_by"`
 	AvatarURL    string       `gorm:"size:255;column:avatar_url"`
 	BusinessID   uint64       `gorm:"column:business_id"`
 	// relation to creator (optional)
@@ -43,4 +45,9 @@ func (e *Employee) IsActive() bool {
 		return false
 	}
 	return e.FiredAt == nil
+}
+
+// TableName specifies the table name for GORM
+func (Employee) TableName() string {
+	return "employee"
 }

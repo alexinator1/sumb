@@ -1,0 +1,9 @@
+{
+    "description": "Описание тестовой компании",
+    "ownerFirstName": "Иван",
+    "ownerLastName": "Петров",
+    "ownerMiddleName": "Иванович",
+    "ownerEmail": "invalid-email-not-valid",
+    "ownerPhone": "+79991234567"
+}
+

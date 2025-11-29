@@ -14,6 +14,19 @@ MODULE_PACKAGE_NAME := $(MODULE)generated
 MODULE_GEN_PATH = $(MODULES_GENERATED_FOLDER)/$(MODULE_PACKAGE_NAME)
 MODULE_DOMAIN_DIR := back/internal/domain/$(MODULE)
 
+OAPI_IMAGE = oapigen
+
+build-oapi:
+	docker build -t $(OAPI_IMAGE) -f docker/oapigen/Dockerfile .
+
+generate-module-oapi: build-oapi
+	docker run --rm -v ${PWD}:/app $(OAPI_IMAGE) \
+		-generate types -package $(MODULE_PACKAGE_NAME) -o /app/$(MODULE_GEN_PATH)/$(MODULE).gen.go /app/$(MODULES_SPEC_DIR)/$(MODULE)-api.yaml
+
+clean-module-oapi:
+	rm -f $(MODULE_GEN_PATH)/$(MODULE).gen.go
+
+
 # Универсальная функция для генерации модуля
 # Использование: make generate-module MODULE=employee
 prepare-module-structure:
@@ -74,15 +87,19 @@ generate-module:
 	@echo "📁 Generated $(MODULE) Go files:"
 	@find $(MODULE_GEN_PATH) -name "*.go" | head -10
 
+
+OAPI_CODEGEN_IMAGE = ghcr.io/deepmap/oapi-codegen/v2:latest
+
 # Генерация всех модулей из массива MODULES
 generate-modules:
 	@echo "🔧 Generating all modules: $(MODULES)"
 	@for module in $(MODULES); do \
 		echo "📦 Generating module: $$module"; \
-		$(MAKE) generate-module MODULE=$$module; \
+		$(MAKE) generate-module-oapi MODULE=$$module; \
 		echo ""; \
 	done
 	@echo "✅ All modules generated successfully!"
+
 
 # Показать доступные модули
 list-modules:

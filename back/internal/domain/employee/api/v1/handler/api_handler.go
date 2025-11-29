@@ -42,16 +42,7 @@ func (h *ApiHandler) CreateEmployee(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
-	// здесь можно вызвать сервисный слой, преобразовав req в сущность.
-	// Пока просто валидируем минимально сгенерированными проверками и возвращаем то, что распознали.
-	if err := generated.AssertCreateEmployeeRequestRequired(req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	if err := generated.AssertCreateEmployeeRequestConstraints(req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+
 	ent, err := adapter.GeneratedToDomainEmployee(req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

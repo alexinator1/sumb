@@ -9,30 +9,37 @@ import (
 
 type AppProviders struct {
 	cfg                 *AppConfig
-	employeeApiProvider *employeprovider.EmployeeApiProvider
-	businessApiProvider *businessprovider.BusinessApiProvider
+	DbProvider          *DBProvider
+	employeeProvider *employeprovider.EmployeeProvider
+	businessProvider *businessprovider.BusinessProvider
 }
 
-func NewAppProviders(cfg *AppConfig) *AppProviders {
-	return &AppProviders{cfg: cfg}
+func NewAppProviders(cfg *AppConfig) (*AppProviders, error) {
+	dbProvider, err := newDBProvider(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize db provider: %w", err)
+	}
+	return &AppProviders{cfg: cfg, DbProvider: dbProvider}, nil
 }
 
 func (ap *AppProviders) Init() error {
-	dbProvider, err := newDBProvider(ap.cfg)
-	if err != nil {
-		return fmt.Errorf("failed to initialize db provider: %w", err)
-	}
-
-	ap.employeeApiProvider = employeprovider.NewEmployeeApiProvider(dbProvider.DB())
-	ap.businessApiProvider = businessprovider.NewBusinessApiProvider(dbProvider.DB())
-
+	ap.employeeProvider = employeprovider.NewEmployeeProvider(ap.DbProvider.DB())
+	ap.businessProvider = businessprovider.NewBusinessProvider(ap.DbProvider.DB())
 	return nil
 }
 
-func (ap *AppProviders) EmployeeApiProvider() *employeprovider.EmployeeApiProvider {
-	return ap.employeeApiProvider
+func (ap *AppProviders) EmployeeProvider() *employeprovider.EmployeeProvider {
+	if ap.employeeProvider == nil {
+		ap.employeeProvider = employeprovider.NewEmployeeProvider(ap.DbProvider.DB())
+	}
+
+	return ap.employeeProvider
 }
 
-func (ap *AppProviders) BusinessApiProvider() *businessprovider.BusinessApiProvider {
-	return ap.businessApiProvider
+func (ap *AppProviders) BusinessProvider() *businessprovider.BusinessProvider {
+	if ap.businessProvider == nil {
+		ap.businessProvider = businessprovider.NewBusinessProvider(ap.DbProvider.DB())
+	}
+
+	return ap.businessProvider
 }

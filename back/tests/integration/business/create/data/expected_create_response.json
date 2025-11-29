@@ -1,0 +1,19 @@
+{
+    "data": {
+        "createdAt": "2025-11-16T15:37:18.140279+03:00",
+        "deletedAt": null,
+        "description": "Описание тестовой компании",
+        "id": 1,
+        "isWorking": false,
+        "logoId": null,
+        "name": "ООО Тестовая Компания",
+        "ownerEmail": "ivan.petrov@test.com",
+        "ownerFirstName": "Иван",
+        "ownerId": 1,
+        "ownerLastName": "Петров",
+        "ownerMiddleName": "Иванович",
+        "ownerPhone": "+79991234567",
+        "updatedAt": "2025-11-16T15:37:18.145592+03:00"
+    },
+    "message": "Business created successfully"
+}

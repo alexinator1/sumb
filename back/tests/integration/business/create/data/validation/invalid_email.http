@@ -1,0 +1,17 @@
+POST /business HTTP/1.1
+Host: localhost
+Content-Type: application/json
+Content-Length: 388
+
+{
+    "name": "ООО Тестовая Компания",
+    "description": "Описание тестовой компании",
+    "ownerFirstName": "Иван",
+    "ownerLastName": "Петров",
+    "ownerMiddleName": "Иванович",
+    "ownerEmail": "invalid-email-not-valid",
+    "ownerPhone": "+79991234567",
+    "password": "abcabc",
+    "passwordConfirmation": "abcabc"
+}
+

@@ -1,7 +1,3 @@
--- Migration: create employee table
--- Creates table: employee
-
--- Create enum types for role and status
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'employee_role') THEN
@@ -18,7 +14,6 @@ CREATE TABLE IF NOT EXISTS employee (
     last_name VARCHAR(100) NOT NULL,
     middle_name VARCHAR(100),
     password_hash VARCHAR(255) NOT NULL,
-    password_salt VARCHAR(255),
     phone VARCHAR(30),
     position VARCHAR(100),
     role employee_role NOT NULL DEFAULT 'regular',

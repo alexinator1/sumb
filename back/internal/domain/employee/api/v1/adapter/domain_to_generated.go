@@ -3,37 +3,50 @@ package adapter
 import (
 	generatedmodel "github.com/alexinator1/sumb/back/internal/domain/employee/api/v1/employeegenerated"
 	domain "github.com/alexinator1/sumb/back/internal/domain/employee/entity"
-	convertor "github.com/alexinator1/sumb/back/internal/tools/convertor"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
-func DomainToGeneratedEmployee(e *domain.Employee) *generatedmodel.Employee {	
-	if e == nil {
+func DomainToGeneratedEmployee(de *domain.Employee) *generatedmodel.Employee {
+	if de == nil {
 		return nil
 	}
 
-	var birthDate *string
-	if e.BirthDate != nil {
-		d := e.BirthDate.Format("2006-01-02")
-		birthDate = &d
+	if de.BirthDate == nil {
+		return nil
 	}
+	role := generatedmodel.EmployeeRole(string(de.Role))
+	status := generatedmodel.EmployeeStatus(string(de.Status))
+	createBy := de.CreatedBy
+	hiredAt := de.HiredAt
+	firedAt := de.FiredAt
+	addedAt := de.AddedAt
+	createdAt := de.CreatedAt
+	updatedAt := de.UpdatedAt
+	avatarUrl := de.AvatarURL
 
-	return &generatedmodel.Employee{
-		Id:           int64(e.ID),
-		FirstName:    e.FirstName,
-		LastName:     e.LastName,
-		MiddleName:   e.MiddleName,
-		Phone:        e.Phone,
-		Position:     e.Position,
-		Role:         e.Role,
-		BirthDate:    birthDate,
-		HiredAt:      e.HiredAt,
-		FiredAt:      e.FiredAt,
-		AddedAt:      e.AddedAt,
-		Email:        e.Email,
-		Status:       e.Status,
-		CreatedAt:    e.CreatedAt,
-		UpdatedAt:    e.UpdatedAt,
-		CreatedBy:    convertor.Int64PtrIfNotZero(e.CreatedBy),
-		AvatarUrl:    convertor.StrPtrIfNotEmpty(e.AvatarURL),
+	generated := generatedmodel.Employee{
+		Id:         de.ID,
+		FirstName:  de.FirstName,
+		LastName:   de.LastName,
+		MiddleName: de.MiddleName,
+		Phone:      de.Phone,
+		Position:   de.Position,
+		Role:       &role,
+		HiredAt:    hiredAt,
+		FiredAt:    firedAt,
+		AddedAt:    &addedAt,
+		Email:      openapi_types.Email(de.Email),
+		Status:     &status,
+		CreatedAt:  &createdAt,
+		UpdatedAt:  &updatedAt,
+		CreatedBy:  createBy,
+		AvatarUrl:  &avatarUrl,
 	}
+	if de.BirthDate != nil {
+		birthDate := openapi_types.Date{
+			Time: *de.BirthDate,
+		}
+		generated.BirthDate = &birthDate
+	}
+	return &generated
 }

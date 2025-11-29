@@ -1,4 +1,4 @@
-package business
+package service
 
 import (
 	"context"
@@ -7,18 +7,21 @@ import (
 	entity "github.com/alexinator1/sumb/back/internal/domain/business/entity"
 	repo "github.com/alexinator1/sumb/back/internal/domain/business/repository"
 	employeeEntity "github.com/alexinator1/sumb/back/internal/domain/employee/entity"
-	employeeService "github.com/alexinator1/sumb/back/internal/domain/employee/service"
+	employeeRepo "github.com/alexinator1/sumb/back/internal/domain/employee/repository"
+	"gorm.io/gorm"
 )
 
 type BusinessService struct {
-	repo *repo.BusinessRepo
-	es   *employeeService.EmployeeService
+	repo    *repo.BusinessRepo
+	empRepo *employeeRepo.EmployeeRepo
+	db      *gorm.DB
 }
 
-func NewService(repo *repo.BusinessRepo, es *employeeService.EmployeeService) *BusinessService {
+func NewService(repo *repo.BusinessRepo, empRepo *employeeRepo.EmployeeRepo, db *gorm.DB) *BusinessService {
 	return &BusinessService{
-		repo: repo,
-		es:   es,
+		repo:    repo,
+		empRepo: empRepo,
+		db:      db,
 	}
 }
 
@@ -41,24 +44,44 @@ func (bs *BusinessService) CreateBusinessWithOwner(ctx context.Context, b *entit
 		return nil, fmt.Errorf("business name is required")
 	}
 
-	// Set default values
-	if !b.IsWorking {
-		b.IsWorking = true
+	// Начинаем транзакцию
+	tx := bs.db.WithContext(ctx).Begin()
+	if tx.Error != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", tx.Error)
 	}
 
-	if err := bs.repo.Create(ctx, b); err != nil {
+	// Откатываем транзакцию в случае ошибки
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+			panic(r)
+		}
+	}()
+
+	// Создаем бизнес в транзакции
+	if err := bs.repo.CreateWithDB(ctx, tx, b); err != nil {
+		tx.Rollback()
 		return nil, fmt.Errorf("failed to create business: %w", err)
 	}
 
+	// Создаем сотрудника в транзакции
 	e.BusinessID = b.ID
-	if err := bs.es.Create(ctx, e); err != nil {
+	if err := bs.empRepo.CreateWithDB(ctx, tx, e); err != nil {
+		tx.Rollback()
 		return nil, fmt.Errorf("failed to create owner: %w", err)
 	}
 
+	// Обновляем бизнес с ID владельца в транзакции
 	b.OwnerID = &e.ID
-	if err := bs.repo.Update(ctx, b); err != nil {
+	if err := bs.repo.UpdateWithDB(ctx, tx, b); err != nil {
+		tx.Rollback()
 		return nil, fmt.Errorf("failed to attach owner to business: %w", err)
 	}
-	
-	return b, nil	
+
+	// Фиксируем транзакцию
+	if err := tx.Commit().Error; err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return b, nil
 }

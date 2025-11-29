@@ -1,6 +1,3 @@
--- Rollback migration: drop employee table
-
-
 DROP TABLE IF EXISTS employee CASCADE;
 
 -- Drop enum types created for employee

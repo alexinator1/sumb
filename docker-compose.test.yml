@@ -18,6 +18,18 @@ services:
     networks:
       - test-network
 
+  migrate:
+    build:
+      context: ./docker/migrate
+    volumes:
+      - ./back/migrations:/migrations
+    command: ["-path", "/migrations", "-database", "postgres://${DB_USER:-postgres}:${DB_PASSWORD:-test_password}@postgres-test:5432/${DB_NAME:-sumb_test}?sslmode=disable", "up"]
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+    networks:
+      - test-network
+
   back-test:
     build:
       context: ./back
@@ -39,6 +51,8 @@ services:
     depends_on:
       postgres-test:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     networks:
       - test-network
     # Override command will be set in Makefile

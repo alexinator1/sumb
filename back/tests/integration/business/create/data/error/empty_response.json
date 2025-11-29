@@ -1,0 +1,10 @@
+{
+    "error": "Validation Error",
+    "message": "Request validation failed",
+    "details": [
+        {
+            "field": "request",
+            "message": "json: cannot unmarshal string into Go value of type businessgenerated.CreateBusinessRequest"
+        }
+    ]
+}

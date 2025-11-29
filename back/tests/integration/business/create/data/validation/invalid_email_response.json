@@ -1,0 +1,11 @@
+{
+    "error": "Validation Error",
+    "message": "Request validation failed",
+    "details": [
+        {
+            "field": "OwnerEmail",
+            "message": "Invalid email format"
+        }
+    ]
+}
+

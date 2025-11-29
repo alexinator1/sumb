@@ -1,0 +1,35 @@
+{
+    "error": "Validation Error",
+    "message": "Request validation failed",
+    "details": [
+        {
+            "field": "Name",
+            "message": "Field is required"
+        },
+        {
+            "field": "OwnerFirstName",
+            "message": "Field is required"
+        },
+        {
+            "field": "OwnerLastName",
+            "message": "Field is required"
+        },
+        {
+            "field": "OwnerEmail",
+            "message": "Field is required"
+        },
+        {
+            "field": "OwnerPhone",
+            "message": "Field is required"
+        },
+        {
+            "field": "Password", 
+            "message":"Password is required"
+        },
+        {
+            "field": "PasswordConfirmation", 
+            "message":"Password confirmation does not match"
+        }
+    ]
+}
+

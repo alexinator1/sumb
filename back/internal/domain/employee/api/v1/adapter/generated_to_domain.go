@@ -5,19 +5,22 @@ import (
 
 	generatedmodel "github.com/alexinator1/sumb/back/internal/domain/employee/api/v1/employeegenerated"
 	domain "github.com/alexinator1/sumb/back/internal/domain/employee/entity"
-	convertor "github.com/alexinator1/sumb/back/internal/tools/convertor"
 )
 
 func GeneratedToDomainEmployee(req generatedmodel.CreateEmployeeRequest) (*domain.Employee, error) {
-
-	birthDate, err := convertor.PtrStringToTime(req.BirthDate)
-	if err != nil {
-		return nil, err
+	if req.BirthDate == nil {
+		return nil, fmt.Errorf("birth date is required")
 	}
+	birthDate := req.BirthDate.Time
 
-	role := domain.EmployeeRole(req.Role)
-	if !role.IsValid() {
-		return nil, fmt.Errorf("invalid role: %s", req.Role)
+	if req.Role == nil {
+		return nil, fmt.Errorf("role is required")
+	}
+	role := domain.EmployeeRole(*req.Role)
+
+	var avatarURL string
+	if req.AvatarUrl != nil {
+		avatarURL = *req.AvatarUrl
 	}
 
 	return &domain.Employee{
@@ -26,10 +29,10 @@ func GeneratedToDomainEmployee(req generatedmodel.CreateEmployeeRequest) (*domai
 		MiddleName: req.MiddleName,
 		Phone:      req.Phone,
 		Position:   req.Position,
-		Role:       string(role),
-		BirthDate:  birthDate,
+		Role:       role,
+		BirthDate:  &birthDate,
 		HiredAt:    req.HiredAt,
-		Email:      req.Email,
-		AvatarURL:  *req.AvatarUrl,
+		Email:      string(req.Email),
+		AvatarURL:  avatarURL,
 	}, nil
 }

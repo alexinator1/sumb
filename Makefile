@@ -1,4 +1,4 @@
-.PHONY: dev dev-back dev-back-down dev-front down logs init-env clean check-env generate-api generate-back generate-back-main generate-front clean-api help init-env-test check-env-test unit-back-tests test-back test-front
+.PHONY: dev dev-back dev-back-down dev-front dev-back-test dev-back-test-down down logs init-env clean check-env generate-api generate-back generate-back-main generate-front clean-api help init-env-test check-env-test integration-back-tests unit-back-tests test-back test-front
 
 # Переменные для генерации
 OPENAPI_GENERATOR := openapitools/openapi-generator-cli
@@ -49,11 +49,10 @@ check-env:
 	@echo "Environment file check passed!"
 
 # Запуск всей системы
-dev: check-env
+dev-a: check-env
 	docker-compose up
-
 # Запуск в фоне
-dev-detached: check-env
+dev: check-env
 	docker-compose up -d
 
 # Только back + БД (back запускается нативно для дебаггера)
@@ -89,21 +88,51 @@ dev-back: check-env
 	@echo ""
 	@echo "⚠️  To stop dependencies: make dev-back-down"
 
-# Только front
-dev-front: check-env
-	docker-compose up front
-
-
-
-
 # Остановка зависимостей для dev-back
 dev-back-down:
 	@echo "🛑 Stopping dependencies..."
 	@docker-compose -f docker-compose.deps.yml --env-file .env down
 
+# Тестовое окружение для локальной отладки тестов
+dev-back-test: check-env-test
+	@echo "🚀 Starting test dependencies (postgres-test) in Docker..."
+	@docker-compose -f docker-compose.test.yml --env-file back/test.env up -d postgres-test
+	@echo "⏳ Waiting for postgres-test to be ready..."
+	@timeout=30; \
+	while [ $$timeout -gt 0 ]; do \
+		if docker-compose -f docker-compose.test.yml --env-file back/test.env exec -T postgres-test pg_isready -U postgres > /dev/null 2>&1; then \
+			break; \
+		fi; \
+		echo "   Waiting... ($$timeout)"; \
+		sleep 1; \
+		timeout=$$((timeout - 1)); \
+	done; \
+	if [ $$timeout -eq 0 ]; then \
+		echo "❌ Timeout waiting for postgres-test"; \
+		exit 1; \
+	fi
+	@echo "✅ postgres-test is ready"
+	@echo "🔄 Running migrations..."
+	@docker-compose -f docker-compose.test.yml --env-file back/test.env run --rm migrate || true
+	@echo "✅ Test dependencies are ready!"
+	@echo ""
+	@echo "🧪 To run tests locally with this DB:"
+	@echo "   1. Export variables from test.env (e.g. 'set -o allexport && source back/test.env && set +o allexport')"
+	@echo "   2. Run: cd back && go test ./..."
+	@echo "   3. For integration focus: go test ./... -tags=integration"
+	@echo ""
+	@echo "📊 Test dependencies status:"
+	@docker-compose -f docker-compose.test.yml --env-file back/test.env ps
+	@echo ""
+	@echo "⚠️  To stop test dependencies: make dev-back-test-down"
+
+dev-back-test-down:
+	@echo "🛑 Stopping test dependencies..."
+	@docker-compose -f docker-compose.test.yml --env-file back/test.env down
+
 # Остановка и удаление контейнеров
 down:
-	docker-compose down
+	docker-compose down -v
 
 # Остановка
 stop:
@@ -174,10 +203,7 @@ generate-api: generate-back generate-front
 
 # Генерация только для бекенда (Go) - основной API + все модули
 generate-back: generate-modules
-	@echo "📝 Adding all generated code to git..."
-	@git add $(BACK_OUTPUT)/
-	@echo "✅ All generated code added to git"
-	@echo "✅ Backend generation completed! (Main API + Modules + Common)"
+
 
 # Генерация только основного API (без модулей) - теперь только создает структуру папок
 generate-back-main:
@@ -219,33 +245,6 @@ validate-openapi:
 		$(OPENAPI_GENERATOR) validate -i /local/$(OPENAPI_SPEC)
 	@echo "✅ OpenAPI spec is valid!"
 
-# Просмотр объединенной спецификации
-inspect-spec:
-	@echo "🔍 Inspecting merged OpenAPI spec..."
-	@docker run --rm -v ${PWD}:/local \
-		$(OPENAPI_GENERATOR) generate \
-		-i /local/$(OPENAPI_SPEC) \
-		-g openapi-yaml \
-		-o /tmp/openapi-merged \
-		--skip-overwrite
-	@echo "📄 First 50 lines of merged spec:"
-	@cat /tmp/openapi-merged/openapi/openapi.yaml | head -50
-	@echo "..."
-	@echo "✅ OpenAPI spec successfully merged all refs"
-
-# Генерация Swagger UI документации
-swagger-ui:
-	@echo "📚 Opening Swagger UI..."
-	@docker run --rm -p 8085:8080 \
-		-e SWAGGER_JSON=/tmp/openapi.yaml \
-		-v ${PWD}/api/openapi.yaml:/tmp/openapi.yaml \
-		swaggerapi/swagger-ui
-
-# Полный цикл: валидация + генерация
-rebuild-api: validate-openapi clean-api generate-api
-	@echo "🎉 API completely rebuilt!"
-
-# Установка зависимостей фронтенда (после генерации)
 front-deps:
 	@echo "📦 Installing frontend dependencies..."
 	cd front && npm install
@@ -259,49 +258,49 @@ front-deps:
 # dev-front: generate-front front-deps
 # 	cd front && npm run dev
 
-# Инициализация .env.test файла из .env.test.dist
+# Инициализация test.env файла из test.env.dist
 init-env-test:
-	@if [ ! -f .env.test ]; then \
-		if [ -f .env.test.dist ]; then \
-			echo "Creating .env.test from .env.test.dist..."; \
-			cp .env.test.dist .env.test; \
-			echo "✅ .env.test file created"; \
+	@if [ ! -f back/test.env ]; then \
+		if [ -f back/test.env.dist ]; then \
+			echo "Creating test.env from test.env.dist..."; \
+			cp back/test.env.dist back/test.env; \
+			echo "✅ back/test.env file created"; \
 		else \
-			echo "❌ Error: .env.test.dist not found. Creating default .env.test..."; \
-			echo "# Test Environment Configuration" > .env.test; \
-			echo "DB_HOST=postgres-test" >> .env.test; \
-			echo "DB_PORT=5432" >> .env.test; \
-			echo "DB_USER=postgres" >> .env.test; \
-			echo "DB_PASSWORD=test_password" >> .env.test; \
-			echo "DB_NAME=sumb_test" >> .env.test; \
-			echo "DB_SSLMODE=disable" >> .env.test; \
-			echo "BACKEND_PORT=8081" >> .env.test; \
-			echo "SERVER_PORT=8081" >> .env.test; \
-			echo "GO_ENV=test" >> .env.test; \
-			echo "JWT_SECRET=test-secret-key" >> .env.test; \
-			echo "✅ Default .env.test file created"; \
+			echo "❌ Error: test.env.dist not found. Creating default test.env..."; \
+			echo "# Test Environment Configuration" > test.env; \
+			echo "DB_HOST=postgres-test" >> test.env; \
+			echo "DB_PORT=5432" >> test.env; \
+			echo "DB_USER=postgres" >> test.env; \
+			echo "DB_PASSWORD=test_password" >> test.env; \
+			echo "DB_NAME=sumb_test" >> test.env; \
+			echo "DB_SSLMODE=disable" >> test.env; \
+			echo "BACKEND_PORT=8081" >> test.env; \
+			echo "SERVER_PORT=8081" >> test.env; \
+			echo "GO_ENV=test" >> test.env; \
+			echo "JWT_SECRET=test-secret-key" >> test.env; \
+			echo "✅ Default test.env file created"; \
 		fi; \
 	else \
-		echo "✅ .env.test already exists"; \
+		echo "✅ test.env already exists"; \
 	fi
 
-# Проверка .env.test файла
+# Проверка test.env файла
 check-env-test:
-	@if [ ! -f .env.test ]; then \
-		echo "Error: .env.test file not found. Run 'make init-env-test' first"; \
+	@if [ ! -f back/test.env ]; then \
+		echo "Error: test.env file not found. Run 'make init-env-test' first"; \
 		exit 1; \
 	fi
 	@echo "✅ Test environment file check passed!"
 
-# Unit тесты бекенда в Docker контейнере
-unit-back-tests: check-env-test
-	@echo "🧪 Running backend unit tests in Docker container..."
+# Интеграционные тесты бекенда в Docker контейнере
+integration-back-tests: check-env-test
+	@echo "🧪 Running backend integration tests in Docker container..."
 	@echo "📦 Starting test services (postgres-test)..."
-	@docker-compose -f docker-compose.test.yml --env-file .env.test up -d postgres-test
+	@docker-compose -f docker-compose.test.yml --env-file test.env up -d postgres-test
 	@echo "⏳ Waiting for postgres-test to be ready..."
 	@timeout=30; \
 	while [ $$timeout -gt 0 ]; do \
-		if docker-compose -f docker-compose.test.yml --env-file .env.test exec -T postgres-test pg_isready -U postgres > /dev/null 2>&1; then \
+		if docker-compose -f docker-compose.test.yml --env-file test.env exec -T postgres-test pg_isready -U postgres > /dev/null 2>&1; then \
 			break; \
 		fi; \
 		echo "   Waiting... ($$timeout)"; \
@@ -310,18 +309,58 @@ unit-back-tests: check-env-test
 	done; \
 	if [ $$timeout -eq 0 ]; then \
 		echo "❌ Timeout waiting for postgres-test"; \
-		docker-compose -f docker-compose.test.yml --env-file .env.test down; \
+		docker-compose -f docker-compose.test.yml --env-file test.env down; \
+		exit 1; \
+	fi
+	@echo "✅ postgres-test is ready"
+	@echo "🔄 Running migrations..."
+	@docker-compose -f docker-compose.test.yml --env-file test.env run --rm migrate || true
+	@echo "🧪 Running Go integration tests..."
+	@docker-compose -f docker-compose.test.yml --env-file test.env run --rm \
+		-e CGO_ENABLED=1 \
+		-e DB_HOST=postgres-test \
+		-e DB_PORT=5432 \
+		-e DB_USER=postgres \
+		-e DB_PASSWORD=test_password \
+		-e DB_NAME=sumb_test \
+		-e DB_SSLMODE=disable \
+		-e SERVER_PORT=8081 \
+		back-test \
+		sh -c "cd /app && go test -v -tags=integration ./internal/domain/business/api/v1/handler/... -run 'Test.*Integration'" || \
+		(echo "❌ Integration tests failed" && docker-compose -f docker-compose.test.yml --env-file test.env down && exit 1)
+	@echo "🧹 Cleaning up test services..."
+	@docker-compose -f docker-compose.test.yml --env-file test.env down
+	@echo "✅ Integration tests completed!"
+
+# Unit тесты бекенда в Docker контейнере
+unit-back-tests: check-env-test
+	@echo "🧪 Running backend unit tests in Docker container..."
+	@echo "📦 Starting test services (postgres-test)..."
+	@docker-compose -f docker-compose.test.yml --env-file test.env up -d postgres-test
+	@echo "⏳ Waiting for postgres-test to be ready..."
+	@timeout=30; \
+	while [ $$timeout -gt 0 ]; do \
+		if docker-compose -f docker-compose.test.yml --env-file test.env exec -T postgres-test pg_isready -U postgres > /dev/null 2>&1; then \
+			break; \
+		fi; \
+		echo "   Waiting... ($$timeout)"; \
+		sleep 1; \
+		timeout=$$((timeout - 1)); \
+	done; \
+	if [ $$timeout -eq 0 ]; then \
+		echo "❌ Timeout waiting for postgres-test"; \
+		docker-compose -f docker-compose.test.yml --env-file test.env down; \
 		exit 1; \
 	fi
 	@echo "✅ postgres-test is ready"
 	@echo "🧪 Running Go unit tests..."
-	@docker-compose -f docker-compose.test.yml --env-file .env.test run --rm \
+	@docker-compose -f docker-compose.test.yml --env-file test.env run --rm \
 		-e CGO_ENABLED=1 \
 		back-test \
 		sh -c "cd /app && go test -v -race -coverprofile=coverage.out ./... && go tool cover -html=coverage.out -o coverage.html && echo '✅ Coverage report generated: coverage.html'" || \
-		(echo "❌ Tests failed" && docker-compose -f docker-compose.test.yml --env-file .env.test down && exit 1)
+		(echo "❌ Tests failed" && docker-compose -f docker-compose.test.yml --env-file test.env down && exit 1)
 	@echo "🧹 Cleaning up test services..."
-	@docker-compose -f docker-compose.test.yml --env-file .env.test down
+	@docker-compose -f docker-compose.test.yml --env-file test.env down
 	@echo "✅ Unit tests completed!"
 
 # Тесты бекенда (локально, без Docker)
@@ -338,7 +377,17 @@ migrate-create:
 	docker-compose run --rm migrate create -ext sql -dir /migrations -seq $$name
 
 migrate-up:
-	docker-compose run --rm migrate -path /migrations -database "postgres://${DB_USER:-postgres}:${DB_PASSWORD:-password}@postgres:${DB_PORT:-5432}/${DB_NAME:-sumb}?sslmode=disable" up
+	set -o allexport && source .env && set +o allexport && \
+	docker-compose run --rm migrate \
+		-path /migrations \
+		-database "postgres://$$DB_USER:$$DB_PASSWORD@postgres:$$DB_PORT/$$DB_NAME?sslmode=disable" up
+
+migrate-up-test:
+	set -o allexport && source test.env && set +o allexport && \
+	docker-compose run --rm migrate \
+		-path /migrations \
+		-database "postgres://$$DB_USER:$$DB_PASSWORD@postgres:$$DB_PORT/$$DB_NAME?sslmode=disable" up
+
 
 migrate-down:
 	docker-compose run --rm migrate -path /migrations -database "postgres://${DB_USER:-postgres}:${DB_PASSWORD:-password}@postgres:${DB_PORT:-5432}/${DB_NAME:-sumb}?sslmode=disable" 	down
@@ -368,10 +417,11 @@ help:
 	@echo "  make clean-api     - Remove generated API code"
 	@echo "  make front-deps    - Install frontend dependencies"
 	@echo "Testing:"
+	@echo "  make integration-back-tests - Run backend integration tests in Docker container"
 	@echo "  make unit-back-tests - Run backend unit tests in Docker container"
 	@echo "  make test-back     - Run Go tests locally (without Docker)"
 	@echo "  make test-front    - Run Vue tests"
-	@echo "  make init-env-test - Initialize .env.test file from .env.test.dist"
+	@echo "  make init-env-test - Initialize test.env file from test.env.dist"
 	@echo ""
 	@echo "Utilities:"
 	@echo "  make down          - Stop docker containers"
